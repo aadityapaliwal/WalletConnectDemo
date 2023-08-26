@@ -1,0 +1,164 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-parcelize'
+apply plugin: "androidx.navigation.safeargs.kotlin"
+apply plugin: 'kotlin-kapt'
+apply plugin: 'com.google.protobuf'
+
+android {
+    configurations{
+        all*.exclude module: 'bcprov-jdk15on'
+    }
+    lintOptions {
+        disable 'NullSafeMutableLiveData'
+    }
+
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
+
+    defaultConfig {
+        applicationId "cc.test.sample"
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        vectorDrawables.useSupportLibrary = true
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
+// To inline the bytecode built with JVM target 1.8 into
+// bytecode that is being built with JVM target 1.6. (e.g. navArgs)
+
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    sourceSets {
+        main {
+            res {
+                srcDirs 'src/main/res', 'src/main/res/layouts/launcher', 'src/main/res/layouts/onboarding', 'src/main/res/layouts/home', 'src/main/res/layouts/common', 'src/main/res/layouts/replenish'
+            }
+        }
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    buildFeatures {
+        viewBinding = true
+        dataBinding = true
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$rootProject.kotlinVersion"
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.work:work-runtime:2.7.1'
+    implementation 'androidx.databinding:databinding-runtime:8.0.2'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20180813'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$rootProject.lifecycleVersion"
+    annotationProcessor "androidx.lifecycle:lifecycle-common-java8:$rootProject.lifecycleVersion"
+
+    //ViewModel KTX
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$rootProject.lifecycleVersion"
+
+    //LiveData KTX
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$rootProject.lifecycleVersion"
+
+    // navigation
+    implementation "androidx.navigation:navigation-fragment-ktx:$rootProject.navigationVersion"
+    implementation "androidx.navigation:navigation-ui-ktx:$rootProject.navigationVersion"
+
+    implementation "com.google.code.gson:gson:$rootProject.gsonVersion"
+
+
+    // Koin - Dependency injection framework
+    implementation "io.insert-koin:koin-android:$rootProject.koinVersion"
+    // Java Compatibility
+    implementation "io.insert-koin:koin-android-compat:$rootProject.koinVersion"
+    // Jetpack WorkManager
+    implementation "io.insert-koin:koin-androidx-workmanager:$rootProject.koinVersion"
+    // Navigation Graph
+    implementation "io.insert-koin:koin-androidx-navigation:$rootProject.koinVersion"
+
+    //Hedera Hashgraph
+    implementation 'com.hedera.hashgraph:sdk:2.27.0'
+    implementation 'io.grpc:grpc-okhttp:1.43.0'
+
+    implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
+
+    implementation 'com.google.protobuf:protobuf-javalite:3.19.2'
+
+    // Plaid sdk
+    implementation 'com.plaid.link:sdk-core:3.6.2'
+
+    //Branch io
+    // required for all Android apps
+    implementation 'io.branch.sdk.android:library:5.+'
+    // required if your app is in the Google Play Store (tip: avoid using bundled play services libs)
+    implementation 'com.google.firebase:firebase-appindexing:20.0.0'
+    // optional
+
+    //Play Core
+    implementation("com.google.android.play:core:1.10.3")
+    // For Kotlin users also import the Kotlin extensions library for Play Core:
+    implementation("com.google.android.play:core-ktx:1.8.1")
+
+    // wallet connect
+    implementation("com.walletconnect:android-core")
+    implementation("com.walletconnect:web3wallet")
+    implementation(platform("com.walletconnect:android-bom:1.13.1"))
+}
+
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.19.1"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.43.0'
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java { option 'lite' }
+            }
+            task.plugins {
+                grpc { option 'lite' }
+            }
+        }
+    }
+}

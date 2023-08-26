@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="default_font" translatable="false">sans-serif-condensed</string>
+
+    <string name="app_name">Wallet Connect Demo</string>
+
+    <string name="operator_acc_id"></string>
+    <string name="operator_pvt_key"></string>
+    <string name="operator_public_key"></string>
+</resources>

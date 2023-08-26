@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_nav_graph"
+    app:startDestination="@id/walletConnectMenuFragment">
+    <action
+        android:id="@+id/action_walletConnectMenuFragment_to_connectWalletFragment"
+        app:destination="@id/connectWalletFragment" />
+    <fragment
+        android:id="@+id/connectWalletFragment"
+        android:name="com.test.sample.ui.walletConnect.ConnectWalletFragment"
+        android:label="fragment_wallet_connected_apps"
+        tools:layout="@layout/fragment_connect_wallet" />
+    <fragment
+        android:id="@+id/connectedWalletFragment"
+        android:name="com.test.sample.ui.walletConnect.ConnectedWalletFragment"
+        android:label="fragment_connected_wallet"
+        tools:layout="@layout/fragment_connected_wallet" />
+    <action
+        android:id="@+id/action_walletConnectMenuFragment_to_connectedWalletFragment"
+        app:destination="@id/connectedWalletFragment" />
+    <fragment
+        android:id="@+id/walletConnectMenuFragment"
+        android:name="com.test.sample.ui.walletConnect.WalletConnectMenuFragment"
+        android:label="fragment_wallet_connect_menu"
+        tools:layout="@layout/fragment_wallet_connect_mainmenu">
+        <action
+            android:id="@+id/action_walletConnectMenuFragment_to_connectWalletFragment"
+            app:destination="@id/connectWalletFragment" />
+        <action
+            android:id="@+id/action_walletConnectMenuFragment_to_connectedWalletFragment"
+            app:destination="@id/connectedWalletFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/pairProposalFragment"
+        android:name="com.test.sample.ui.walletConnect.PairProposalFragment"
+        android:label="PairProposalFragment" >
+
+        <argument
+            android:name="proposal"
+            app:argType="string" />
+        <argument
+            android:name="verifyContext"
+            app:argType="string" />
+    </fragment>
+    <action android:id="@+id/action_global_pairProposalFragment" app:destination="@id/pairProposalFragment" />
+
+</navigation>
