@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 apply plugin: 'kotlin-kapt'
-apply plugin: 'com.google.protobuf'
+//apply plugin: 'com.google.protobuf'
 
 android {
     configurations{
@@ -114,11 +114,11 @@ dependencies {
 
     //Hedera Hashgraph
     implementation 'com.hedera.hashgraph:sdk:2.27.0'
-    implementation 'io.grpc:grpc-okhttp:1.43.0'
+    implementation 'io.grpc:grpc-okhttp:1.49.2'
 
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
-
-    implementation 'com.google.protobuf:protobuf-javalite:3.19.2'
+    implementation "io.grpc:grpc-protobuf-lite:1.50.2"
+    implementation "com.google.protobuf:protobuf-javalite:3.21.9"
 
     // Plaid sdk
     implementation 'com.plaid.link:sdk-core:3.6.2'
@@ -142,23 +142,23 @@ dependencies {
 }
 
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.19.1"
-    }
-    plugins {
-        grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.43.0'
-        }
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java { option 'lite' }
-            }
-            task.plugins {
-                grpc { option 'lite' }
-            }
-        }
-    }
-}
+//protobuf {
+//    protoc {
+//        artifact = "com.google.protobuf:protoc:3.19.1"
+//    }
+//    plugins {
+//        grpc {
+//            artifact = 'io.grpc:protoc-gen-grpc-java:1.43.0'
+//        }
+//    }
+//    generateProtoTasks {
+//        all().each { task ->
+//            task.builtins {
+//                java { option 'lite' }
+//            }
+//            task.plugins {
+//                grpc { option 'lite' }
+//            }
+//        }
+//    }
+//}

@@ -14,7 +14,7 @@ buildscript {
         classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$navigation_version"
         classpath 'com.google.gms:google-services:4.3.15'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.5'
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.17'
+//        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.17'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -36,7 +36,7 @@ task clean(type: Delete) {
 ext {
     compileSdkVersion = 33
     buildToolsVersion = '33.0.1'
-    minSdkVersion = 24
+    minSdkVersion = 26
     targetSdkVersion = 33
 
     lifecycleVersion = "2.4.0"
