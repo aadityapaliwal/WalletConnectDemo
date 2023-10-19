@@ -113,12 +113,12 @@ dependencies {
     implementation "io.insert-koin:koin-androidx-navigation:$rootProject.koinVersion"
 
     //Hedera Hashgraph
-    implementation 'com.hedera.hashgraph:sdk:2.27.0'
-    implementation 'io.grpc:grpc-okhttp:1.43.0'
+    implementation 'com.hedera.hashgraph:sdk:2.29.0'
+    implementation 'io.grpc:grpc-okhttp:1.49.2'
 
     implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
-    implementation 'com.google.protobuf:protobuf-javalite:3.19.2'
+    implementation 'com.google.protobuf:protobuf-javalite:3.21.9'
 
     // Plaid sdk
     implementation 'com.plaid.link:sdk-core:3.6.2'
