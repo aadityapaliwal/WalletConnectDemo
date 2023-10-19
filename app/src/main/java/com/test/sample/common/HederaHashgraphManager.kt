@@ -1,6 +1,7 @@
 package com.test.sample.common
 
 import android.util.Base64
+import com.hedera.hashgraph.sdk.AccountBalance
 import com.hedera.hashgraph.sdk.AccountBalanceQuery
 import com.hedera.hashgraph.sdk.AccountId
 import com.hedera.hashgraph.sdk.AccountInfoQuery
@@ -34,64 +35,128 @@ object HederaHashgraphManager {
         return PublicKey.fromString(App.instance.applicationContext.getString(R.string.operator_public_key))
     }
 
-    fun getClient() : Client {
-        val client = Client.forName(networkName)
-        client.setOperator(operatorAccountId(), operatorKey())
-        return client
-    }
-
-    fun getAccountBalance(onSuccess: (String?) -> Unit) {
-        AccountBalanceQuery().setAccountId(operatorAccountId()).executeAsync(getClient()).thenAccept {
-            onSuccess(it.toString())
-        }
-    }
-
-    fun getAccountInfo(bytes: ByteArray, onSuccess: (String?) -> Unit) {
+    private fun getClient() : Client? {
         try {
-            val accountID = AccountId.fromBytes(bytes)
-            val client = getClient()
-            val accountInfo = AccountInfoQuery().setAccountId(accountID).execute(client)
-            onSuccess(accountInfo.toBytes().toBase64String())
-            client.close()
-        } catch (e: Exception) {
-            onSuccess(null)
+            val client = Client.forName(networkName)
+            client.setOperator(operatorAccountId(), operatorKey())
+            return client
+        }catch (e: Throwable) {
+            AppLog.e("HederaHashgraphManager", "Error in getClient object creation " + e.message)
         }
+        return null
     }
 
-    fun getTransactionReceiptInfo(txnIdValue: ByteArray, onSuccess: (String?) -> Unit) {
+    fun getAccountBalance(onSuccess: (AccountBalance?, String?) -> Unit) {
         try {
-            val txnId = TransactionId.fromBytes(txnIdValue)
-            TransactionReceiptQuery().setTransactionId(txnId).executeAsync(getClient()).thenAccept {
-                onSuccess(it.toBytes().toBase64String())
+            getClient().let { client ->
+                if (client != null) {
+                    AccountBalanceQuery().setAccountId(operatorAccountId()).executeAsync(client)
+                        .thenAccept {
+                            onSuccess(it, null)
+                            client.close()
+                        }
+                } else {
+                    onSuccess(null, "Error")
+                }
             }
         } catch (e: Exception) {
-            onSuccess(null)
+            onSuccess(null, e.message)
         }
     }
 
-    fun getMirrorNetwork() : List<String> {
-        return getClient().mirrorNetwork
+    fun getAccountInfo(bytes: ByteArray, onSuccess: (String?, String?) -> Unit) {
+        try {
+            getClient().let { client ->
+                if (client != null) {
+                    val accountID = AccountId.fromBytes(bytes)
+                    val accountInfo = AccountInfoQuery().setAccountId(accountID).executeAsync(client).get()
+                    AppLog.d("getAccountInfo", accountInfo.toString())
+                    onSuccess(accountInfo.toBytes().toBase64String(), null)
+                    client.close()
+                } else {
+                    onSuccess(null, "Error")
+                }
+            }
+        } catch (e: Exception) {
+            AppLog.d("getAccountInfo", e.toString())
+            onSuccess(null, e.message)
+        }
     }
 
-    fun getNetwork() : NodeAddressBook {
-        return AddressBookQuery().setFileId(FileId.ADDRESS_BOOK).executeAsync(Client.forName(networkName)).get()
+    fun getTransactionReceiptInfo(txnIdValue: ByteArray, onSuccess: (String?, String?) -> Unit) {
+        try {
+            getClient().let { client ->
+                if (client != null) {
+                    val txnId = TransactionId.fromBytes(txnIdValue)
+                    AppLog.d("HederaHashgraphManager", "getTransactionReceiptInfo Calling TxnID: $txnId")
+                    TransactionReceiptQuery().setTransactionId(txnId).executeAsync(client).thenAccept {
+                        AppLog.d("HederaHashgraphManager", "Success getting Transcation Rec $it")
+                        onSuccess(it.toBytes().toBase64String(), null)
+                        client.close()
+                    }
+                } else {
+                    onSuccess(null, "Error")
+                }
+            }
+        } catch (e: Exception) {
+            AppLog.d("HederaHashgraphManager", "Error in getTransactionReceiptInfo ${e}")
+            onSuccess(null, e.message)
+        }
+    }
+
+    fun getMirrorNetwork() : List<String>? {
+        return try {
+            getClient()?.mirrorNetwork
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getNetwork() : NodeAddressBook? {
+        return try {
+            getClient().let { client ->
+                if (client != null) {
+                    val addressBook = AddressBookQuery().setFileId(FileId.ADDRESS_BOOK).execute(client)
+                    client.close()
+                    addressBook
+                } else {
+                    return null
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun getSignedTransaction(transaction: Transaction<*>) : Transaction<*>{
-        return transaction.sign(operatorKey())
-    }
-
-    fun executeTransaction(transaction: Transaction<*>, isSigned: Boolean) : TransactionResponse {
-        val response = if (isSigned) {
-            transaction.execute(getClient())
-        } else {
-            transaction.sign(operatorKey()).execute(getClient())
+        try {
+            return transaction.sign(operatorKey())
+        } catch (e: Exception) {
+            throw e
         }
-        return response
     }
 
-    fun ByteArray.toBase64String(): String {
-        return Base64.encodeToString(this, Base64.NO_WRAP)
+    fun executeTransaction(transaction: Transaction<*>, isSigned: Boolean) : TransactionResponse? {
+        try {
+            getClient().let { client ->
+                if (client != null) {
+                    val response = if (isSigned) {
+                        transaction.execute(client)
+                    } else {
+                        transaction.sign(operatorKey()).execute(client)
+                    }
+                    return response
+                } else {
+                    throw Exception("Error")
+                }
+            }
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
+}
+
+fun ByteArray.toBase64String(): String {
+    return Base64.encodeToString(this, Base64.NO_WRAP)
 }

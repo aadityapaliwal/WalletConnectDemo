@@ -15,11 +15,11 @@ import com.hedera.hashgraph.sdk.Transaction
 import com.hedera.hashgraph.sdk.proto.Query
 import com.hedera.hashgraph.sdk.proto.SignedTransaction
 import com.hedera.hashgraph.sdk.proto.TransactionBody
-import com.test.sample.App
+import com.test.sample.common.HederaHashgraphManager
 import com.test.sample.HomeNavGraphDirections
 import com.test.sample.R
 import com.test.sample.common.AppLog
-import com.test.sample.common.HederaHashgraphManager
+import com.test.sample.common.toBase64String
 import com.test.sample.databinding.ActivityMainBinding
 import com.test.sample.modal.SignTransactionModel
 import com.test.sample.modal.WCTransactionModel
@@ -189,41 +189,39 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 			})
 	}
 	private fun handleGetNetworkRequest(sessionRequest: Wallet.Model.SessionRequest) {
-		lifecycleScope.executeAsyncTask(
-			onPreExecute = {
+		val nodeAddress = arrayListOf<String>()
 
-			}, doInBackground = {
-				HederaHashgraphManager.getNetwork()
-			}, onPostExecute = {
-				val respond : Wallet.Params.SessionRequestResponse = if (it.nodeAddresses.isNullOrEmpty()) {
-					val error = Wallet.Model.JsonRpcResponse.JsonRpcError(sessionRequest.request.id, -1, "Not found")
-					Wallet.Params.SessionRequestResponse(sessionRequest.topic, error)
-				} else {
-					val result = Wallet.Model.JsonRpcResponse.JsonRpcResult(sessionRequest.request.id, it.toString())
-					Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
-				}
+		val networkRes = HederaHashgraphManager.getNetwork()
+		val respond : Wallet.Params.SessionRequestResponse = if (networkRes == null || networkRes.nodeAddresses.isNullOrEmpty() || networkRes.nodeAddresses?.first() == null) {
+			val error = Wallet.Model.JsonRpcResponse.JsonRpcError(sessionRequest.request.id, -1, "No address found")
+			Wallet.Params.SessionRequestResponse(sessionRequest.topic, error)
+		} else {
+			val accountID = networkRes.nodeAddresses?.first()?.accountId
+			nodeAddress.add("${accountID?.realm}.${accountID?.shard}.${accountID?.num}")
+			val result = Wallet.Model.JsonRpcResponse.JsonRpcResult(sessionRequest.request.id, nodeAddress.toString())
+			Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
+		}
 
-				AppLog.d("Responding Request", "handleGetNetworkRequest: Response $respond")
-				Web3Wallet.respondSessionRequest(respond,
-					onSuccess = {
-						AppLog.d("OnSessionRequest Success", "handleGetNetworkRequest: Completed")
-					},
-					onError = {error ->
-						AppLog.d("OnSessionRequest Error", "handleGetNetworkRequest $error")
-					})
-			}
-		)
+		AppLog.d("Responding Request", "handleGetNetworkRequest: Response $respond")
+		Web3Wallet.respondSessionRequest(respond,
+			onSuccess = {
+				AppLog.d("OnSessionRequest Success", "handleGetNetworkRequest: Completed")
+			},
+			onError = {error ->
+				AppLog.d("OnSessionRequest Error", "handleGetNetworkRequest $error")
+			})
 	}
 
 	private fun handleGetAccountBalanceRequest(sessionRequest: Wallet.Model.SessionRequest) {
-		HederaHashgraphManager.getAccountBalance(onSuccess = {
-		val respond = if (it.isNullOrEmpty()) {
-			val result = Wallet.Model.JsonRpcResponse.JsonRpcError(sessionRequest.request.id, -1, "Query Result is empty")
-			Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
-		} else {
-			val result = Wallet.Model.JsonRpcResponse.JsonRpcResult(sessionRequest.request.id, it)
-			Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
-		}
+		HederaHashgraphManager.getAccountBalance(onSuccess = { it, errorMsg ->
+			val respond = if (it == null) {
+				val result = Wallet.Model.JsonRpcResponse.JsonRpcError(sessionRequest.request.id, -1, errorMsg ?: "Query Result is empty")
+				Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
+			} else {
+				val jsonResult = JSONObject().put("hbars", it.hbars)
+				val result = Wallet.Model.JsonRpcResponse.JsonRpcResult(sessionRequest.request.id, jsonResult.toString())
+				Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
+			}
 
 			AppLog.d("Responding Request", "handleGetAccountBalanceRequest: Response $respond")
 			Web3Wallet.respondSessionRequest(respond,
@@ -243,13 +241,18 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
 		when (query.queryCase) {
 			Query.QueryCase.CRYPTOGETINFO -> {
-				HederaHashgraphManager.getAccountInfo(query.cryptoGetInfo.accountID.toByteArray(), onSuccess = { result ->
-					sendQueryResponse(sessionRequest, result)
+				HederaHashgraphManager.getAccountInfo(query.cryptoGetInfo.accountID.toByteArray(), onSuccess = { result, error ->
+					sendQueryResponse(sessionRequest, result, error)
 				})
 			}
 			Query.QueryCase.TRANSACTIONGETRECEIPT -> {
-				HederaHashgraphManager.getTransactionReceiptInfo(query.transactionGetReceipt.transactionID.toByteArray(), onSuccess = { result ->
-					sendQueryResponse(sessionRequest, result)
+				HederaHashgraphManager.getTransactionReceiptInfo(query.transactionGetReceipt.transactionID.toByteArray(), onSuccess = { result, error ->
+					sendQueryResponse(sessionRequest, result, error)
+				})
+			}
+			Query.QueryCase.CRYPTOGETACCOUNTBALANCE -> {
+				HederaHashgraphManager.getAccountBalance(onSuccess = { it, errorMsg ->
+					sendQueryResponse(sessionRequest, it?.toBytes()?.toByteArray()?.toBase64String(), errorMsg)
 				})
 			}
 			else -> {
@@ -259,9 +262,9 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 		}
 	}
 
-	private fun sendQueryResponse(sessionRequest: Wallet.Model.SessionRequest, queryResult: String?) {
+	private fun sendQueryResponse(sessionRequest: Wallet.Model.SessionRequest, queryResult: String?, errorMsg: String?) {
 		val respond = if (queryResult.isNullOrEmpty()) {
-			val result = Wallet.Model.JsonRpcResponse.JsonRpcError(sessionRequest.request.id, -1, "Query Result is empty or not supported")
+			val result = Wallet.Model.JsonRpcResponse.JsonRpcError(sessionRequest.request.id, -1, errorMsg ?: "Query Result is empty or not supported")
 			Wallet.Params.SessionRequestResponse(sessionRequest.topic, result)
 		} else {
 			val result = Wallet.Model.JsonRpcResponse.JsonRpcResult(sessionRequest.request.id, queryResult)
